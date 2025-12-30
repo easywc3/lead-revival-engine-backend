@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "LeadState" ADD VALUE 'NEEDS_HUMAN';

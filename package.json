@@ -9,13 +9,21 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "csv-parse": "^6.1.0",
+    "dotenv": "^17.2.3",
     "next": "16.0.10",
+    "nodemailer": "^7.0.11",
+    "openai": "^6.14.0",
+    "prisma": "^5.22.0",
     "react": "19.2.1",
-    "react-dom": "19.2.1"
+    "react-dom": "19.2.1",
+    "twilio": "^5.11.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

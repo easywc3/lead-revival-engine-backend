@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadState {
+  NEW
+  READY
+  CONTACTED
+  RESPONDED
+  STOPPED
+}
+
+enum InboundIntent {
+  OPT_OUT
+  INTERESTED
+  NOT_INTERESTED
+  WRONG_PERSON
+  DEFER
+  UNKNOWN
+}
+
+model Lead {
+  id                 Int              @id @default(autoincrement())
+  firstName          String
+  phone              String           @unique
+  state              LeadState        @default(NEW)
+  hasBeenMessaged    Boolean          @default(false)
+
+  aiClarifiedUnknown Boolean          @default(false)
+
+  source             String?
+  importBatchId      String?
+
+  retryCount         Int              @default(0)
+  nextAttemptAt      DateTime?
+  lastErrorCode      String?
+  lastErrorAt        DateTime?
+  lastAttemptAt      DateTime?
+  sendLockAt         DateTime?         // 🔒 NEW — outbound send lock
+
+  inboundMessages    InboundMessage[]
+  outboundMessages   OutboundMessage[]
+
+  createdAt          DateTime         @default(now())
+}
+
+
+model InboundMessage {
+  id         Int            @id @default(autoincrement())
+  leadId     Int
+  lead       Lead           @relation(fields: [leadId], references: [id])
+
+  fromPhone  String
+  body       String
+
+  intent     InboundIntent  @default(UNKNOWN)
+  confidence Float?
+
+  createdAt  DateTime       @default(now())
+}
+
+model OutboundMessage {
+  id        Int      @id @default(autoincrement())
+  leadId    Int
+  lead      Lead     @relation(fields: [leadId], references: [id])
+
+  body      String
+  reason    String
+  sentAt    DateTime @default(now())
+}
