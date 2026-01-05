@@ -24,12 +24,12 @@ export async function POST(req: Request) {
       );
     }
 
-const message = await generateInitialMessage({
-  leadId: lead.id,
-  firstName: lead.firstName,
-  intent: lead.intent ?? "unknown",
-});
-
+    // ✅ Lead has no intent; initial message always starts UNKNOWN
+    const message = await generateInitialMessage({
+      leadId: lead.id,
+      firstName: lead.firstName,
+      intent: "UNKNOWN",
+    });
 
     return NextResponse.json({
       leadId: lead.id,
