@@ -6,15 +6,22 @@ import { acquireSendLock, releaseSendLock } from "@/services/sendLock";
 import { checkSuppression } from "@/services/suppression";
 
 /**
- * Domain-safe LeadState
- * (decoupled from Prisma enum)
+ * Domain-level LeadState understood by revival + suppression logic
+ * IMPORTANT: does NOT include READY
  */
-type LeadState =
+type DomainLeadState =
   | "NEW"
-  | "READY"
   | "CONTACTED"
   | "RESPONDED"
   | "STOPPED";
+
+/**
+ * Normalize Prisma lead.state → domain-safe state
+ */
+function normalizeLeadState(state: string): DomainLeadState {
+  if (state === "READY") return "CONTACTED";
+  return state as DomainLeadState;
+}
 
 export async function POST() {
   const leads = await prisma.lead.findMany({
@@ -35,9 +42,7 @@ export async function POST() {
 
   const lead = leads[0];
 
-  // ✅ Normalize Prisma enum → domain state
-  const domainState: LeadState =
-    lead.state === "READY" ? "READY" : lead.state;
+  const domainState = normalizeLeadState(lead.state);
 
   if (lead._count.outboundMessages !== 1) {
     return NextResponse.json({
