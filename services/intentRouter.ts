@@ -4,7 +4,6 @@ import { notifyHuman } from "@/services/notifyHuman";
 import { buildConversationContext } from "@/services/conversationContext";
 import { generateAIReply } from "@/services/aiResponder";
 import type { IntentResult } from "@/services/intentClassifier";
-import { LeadState } from "@prisma/client";
 
 type Params = {
   leadId: number;
@@ -16,7 +15,7 @@ type Params = {
  * Production intent router
  * - AI handles early conversation
  * - Human handoff on strong or explicit intent
- * - LeadState.RESPONDED = human owns lead
+ * - state === "RESPONDED" → human owns lead
  */
 export async function applyIntentToLead({
   leadId,
@@ -34,7 +33,7 @@ export async function applyIntentToLead({
   if (!lead) return { status: "no_state_change" };
 
   // 🛑 Human already owns lead
-  if (lead.state === LeadState.RESPONDED) {
+  if (lead.state === "RESPONDED") {
     return { status: "no_state_change" };
   }
 
@@ -62,7 +61,7 @@ export async function applyIntentToLead({
   if (intent === "OPT_OUT") {
     await prisma.lead.update({
       where: { id: leadId },
-      data: { state: LeadState.STOPPED },
+      data: { state: "STOPPED" },
     });
 
     await sendSms({
@@ -82,7 +81,7 @@ export async function applyIntentToLead({
 
     await prisma.lead.update({
       where: { id: leadId },
-      data: { state: LeadState.RESPONDED },
+      data: { state: "RESPONDED" },
     });
 
     await notifyHuman({
@@ -122,7 +121,7 @@ export async function applyIntentToLead({
       where: { id: leadId },
       data: {
         hasBeenMessaged: true,
-        state: LeadState.CONTACTED,
+        state: "CONTACTED",
       },
     });
 
