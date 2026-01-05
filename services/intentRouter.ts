@@ -49,13 +49,16 @@ export async function applyIntentToLead({
     text.includes("can we talk") ||
     text.includes("next steps");
 
-  const wantsHuman =
-    explicitHumanRequest ||
-    intent === "INTERESTED" ||
-    signals.includes("CALL_REQUEST") ||
-    signals.includes("READY_TO_MOVE") ||
-    signals.includes("PRICE_SPECIFIC") ||
-    signals.includes("TIMELINE_SOON");
+const signalList = signals as string[];
+
+const wantsHuman =
+  explicitHumanRequest ||
+  intent === "INTERESTED" ||
+  signalList.includes("CALL_REQUEST") ||
+  signalList.includes("READY_TO_MOVE") ||
+  signalList.includes("PRICE_SPECIFIC") ||
+  signalList.includes("TIMELINE_SOON");
+
 
   // 🛑 OPT OUT
   if (intent === "OPT_OUT") {
