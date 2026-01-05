@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { classifyInboundIntent } from "@/services/intentClassifier";
 import { applyIntentToLead } from "@/services/intentRouter";
-import { LeadState } from "@prisma/client";
 
 /**
  * Twilio inbound SMS webhook
@@ -32,7 +31,7 @@ export async function POST(req: Request) {
         data: {
           phone,
           firstName: "Unknown", // ✅ REQUIRED BY SCHEMA
-          state: LeadState.CONTACTED,
+          state: "CONTACTED",   // ✅ STRING — NOT Prisma enum
           hasBeenMessaged: false,
           source: "twilio_inbound",
         },
@@ -48,20 +47,20 @@ export async function POST(req: Request) {
         leadId: lead.id,
         fromPhone: phone,
         body: inboundText,
-        intent: intentResult.intent as any,
+        intent: intentResult.intent,
         confidence: intentResult.confidence,
       },
     });
 
-    // Apply intent (safe; sendSms will not throw)
+    // Apply intent (router controls replies + state)
     await applyIntentToLead({
       leadId: lead.id,
-      intentResult,
+      intent: intentResult.intent,
       inboundText,
     });
 
     return NextResponse.json({
-      status: "replied",
+      status: "ok",
       leadId: lead.id,
     });
   } catch (err) {
