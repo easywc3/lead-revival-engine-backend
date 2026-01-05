@@ -1,3 +1,4 @@
+// services/aiResponder.ts
 import { getOpenAI } from "@/services/openaiClient";
 import type { IntentResult } from "@/services/aiIntentClassifier";
 import type { ConversationContext } from "@/services/conversationContext";
@@ -7,10 +8,6 @@ export async function generateAIReply(params: {
   intent: IntentResult;
   ctx: ConversationContext;
 }): Promise<string | null> {
-  const inboundText = (params.inboundText || "").trim();
-  const { intent, ctx } = params;
-
-  // ⛔ HARD STOP — build & runtime safe
   if (!process.env.OPENAI_API_KEY) {
     return null;
   }
@@ -20,63 +17,44 @@ export async function generateAIReply(params: {
     return null;
   }
 
-  // ✅ Identity questions are CONFUSED intent
-  const isIdentityRequest = intent.intent === "CONFUSED";
+  const { inboundText, intent, ctx } = params;
 
   const systemPrompt = `
 You are a real human texting on behalf of a real estate agent.
 
 Rules:
-- ONE short SMS only
-- Sound human and specific
-- NEVER say "checking in"
-- NEVER say "hope you're doing well"
-- NEVER use placeholders like [Your Name] or [Your Brokerage]
-- NEVER be salesy
-- If the lead asks who this is, explain WHY you're texting (past context), not your title
-- Offer an easy out if timing is bad
+- ONE short SMS
+- Sound human
 - No emojis
+- No sales language
+- If identity is unclear, explain context
 `;
 
   const userPrompt = `
-Inbound message:
+Inbound:
 "${inboundText}"
 
-Recent context:
-${ctx.recentTranscript || "(no prior messages)"}
+Recent:
+${ctx.recentTranscript || "(none)"}
 
 Intent: ${intent.intent}
 
-Write the best possible reply.
+Write reply.
 `;
 
-  try {
-    const resp = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.8,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    });
+  const resp = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.7,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+  });
 
-    let text = resp.choices[0]?.message?.content?.trim();
-
-    // HARD SAFETY
-    if (!text || text.length < 3) {
-      return null;
-    }
-
-    // Guard against placeholders
-    if (text.includes("[Your") || text.includes("Your Name")) {
-      return isIdentityRequest
-        ? "Totally fair — you reached out a while back about real estate info, and I’m following up. If now’s not a good time, no worries at all."
-        : null;
-    }
-
-    return text.slice(0, 500);
-  } catch (err) {
-    console.error("[AI responder failed]", err);
+  const text = resp.choices[0]?.message?.content?.trim();
+  if (!text || text.length < 3) {
     return null;
   }
+
+  return text.slice(0, 500);
 }
