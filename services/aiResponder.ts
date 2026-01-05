@@ -1,6 +1,5 @@
-// services/aiResponder.ts
 import { getOpenAI } from "@/services/openaiClient";
-import type { IntentResult } from "@/services/intentClassifier";
+import type { IntentResult } from "@/services/aiIntentClassifier";
 import type { ConversationContext } from "@/services/conversationContext";
 
 export async function generateAIReply(params: {
@@ -8,22 +7,17 @@ export async function generateAIReply(params: {
   intent: IntentResult;
   ctx: ConversationContext;
 }): Promise<string | null> {
-  const openai = getOpenAI();
-  if (!openai) return null;
+  if (!process.env.OPENAI_API_KEY) return null;
 
-  const inboundText = params.inboundText.trim();
-  const { intent, ctx } = params;
+  const openai = getOpenAI();
+  const { inboundText, intent, ctx } = params;
+
+  const isIdentityRequest = intent.signals.includes("IDENTITY_REQUEST");
 
   const systemPrompt = `
 You are a real human texting on behalf of a real estate agent.
-
-Rules:
-- ONE short SMS only
-- Sound human and specific
-- NEVER say "checking in"
-- NEVER say "hope you're doing well"
-- NEVER be salesy
-- Offer an easy out if timing is bad
+ONE short SMS only.
+No emojis. No fluff.
 `;
 
   const userPrompt = `
@@ -34,24 +28,20 @@ Recent context:
 ${ctx.recentTranscript || "(none)"}
 
 Intent: ${intent.intent}
+Signals: ${intent.signals.join(", ") || "none"}
 `;
 
-  try {
-    const resp = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.8,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    });
+  const resp = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.8,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+  });
 
-    const text = resp.choices[0]?.message?.content?.trim();
-    if (!text || text.length < 3) return null;
+  const text = resp.choices[0]?.message?.content?.trim();
+  if (!text) return null;
 
-    return text.slice(0, 500);
-  } catch (err) {
-    console.error("[AI responder failed]", err);
-    return null;
-  }
+  return text.slice(0, 500);
 }

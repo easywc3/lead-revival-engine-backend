@@ -1,4 +1,3 @@
-// services/aiIntentClassifier.ts
 import { getOpenAI } from "@/services/openaiClient";
 
 export type InboundIntent =
@@ -11,25 +10,25 @@ export type InboundIntent =
   | "INTERESTED"
   | "UNKNOWN";
 
+export type IntentSignal =
+  | "CALL_REQUEST"
+  | "READY_TO_MOVE"
+  | "PRICE_SPECIFIC"
+  | "TIMELINE_SOON"
+  | "IDENTITY_REQUEST"
+  | "FORCE_REPLY";
+
 export type IntentResult = {
   intent: InboundIntent;
   confidence: number;
   reasoning: string;
+  signals: IntentSignal[]; // ✅ ALWAYS PRESENT
 };
 
 export async function classifyIntentAI(
   inboundText: string
 ): Promise<IntentResult> {
   const openai = getOpenAI();
-
-  // ✅ BUILD + DEV SAFE FALLBACK
-  if (!openai) {
-    return {
-      intent: "UNKNOWN",
-      confidence: 0,
-      reasoning: "OpenAI not configured",
-    };
-  }
 
   const systemPrompt = `
 You classify inbound SMS replies from cold real-estate leads.
@@ -60,21 +59,13 @@ Classify the intent.
         schema: {
           type: "object",
           properties: {
-            intent: {
-              type: "string",
-              enum: [
-                "OPT_OUT",
-                "NOT_INTERESTED",
-                "CONFUSED",
-                "SELLER_INTEREST",
-                "BUYER_INTEREST",
-                "DEFER",
-                "INTERESTED",
-                "UNKNOWN",
-              ],
-            },
+            intent: { type: "string" },
             confidence: { type: "number" },
             reasoning: { type: "string" },
+            signals: {
+              type: "array",
+              items: { type: "string" },
+            },
           },
           required: ["intent", "confidence", "reasoning"],
         },
@@ -88,5 +79,6 @@ Classify the intent.
     intent: parsed.intent ?? "UNKNOWN",
     confidence: parsed.confidence ?? 0,
     reasoning: parsed.reasoning ?? "",
+    signals: parsed.signals ?? [], // ✅ SAFE DEFAULT
   };
 }
