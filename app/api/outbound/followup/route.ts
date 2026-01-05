@@ -5,6 +5,17 @@ import { checkRevivalEligibility } from "@/services/revivalGate";
 import { acquireSendLock, releaseSendLock } from "@/services/sendLock";
 import { checkSuppression } from "@/services/suppression";
 
+/**
+ * Domain-safe LeadState
+ * (decoupled from Prisma enum)
+ */
+type LeadState =
+  | "NEW"
+  | "READY"
+  | "CONTACTED"
+  | "RESPONDED"
+  | "STOPPED";
+
 export async function POST() {
   const leads = await prisma.lead.findMany({
     where: {
@@ -24,6 +35,10 @@ export async function POST() {
 
   const lead = leads[0];
 
+  // ✅ Normalize Prisma enum → domain state
+  const domainState: LeadState =
+    lead.state === "READY" ? "READY" : lead.state;
+
   if (lead._count.outboundMessages !== 1) {
     return NextResponse.json({
       status: "blocked",
@@ -38,7 +53,7 @@ export async function POST() {
   });
 
   const suppression = checkSuppression({
-    leadState: lead.state,
+    leadState: domainState,
     latestInboundIntent: latestInbound?.intent,
   });
 
@@ -53,7 +68,7 @@ export async function POST() {
   const decision = checkRevivalEligibility({
     lead: {
       id: lead.id,
-      state: lead.state,
+      state: domainState,
       retryCount: lead.retryCount,
       hasBeenMessaged: lead.hasBeenMessaged,
       outboundMessageCount: lead._count.outboundMessages,
