@@ -1,5 +1,6 @@
 type LeadState =
   | "NEW"
+  | "READY"
   | "CONTACTED"
   | "RESPONDED"
   | "STOPPED";
