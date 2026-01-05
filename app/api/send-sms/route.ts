@@ -9,7 +9,10 @@ export async function POST(req: Request) {
     const leadId = Number(body.leadId);
 
     if (!leadId) {
-      return NextResponse.json({ error: "Missing leadId" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing leadId" },
+        { status: 400 }
+      );
     }
 
     const lead = await prisma.lead.findUnique({
@@ -17,10 +20,17 @@ export async function POST(req: Request) {
     });
 
     if (!lead) {
-      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Lead not found" },
+        { status: 404 }
+      );
     }
 
-    const message = await generateInitialMessage({ leadId: lead.id });
+    const message = await generateInitialMessage({
+      leadId: lead.id,
+      firstName: lead.firstName ?? "there",
+      intent: lead.intent ?? "unknown",
+    });
 
     if (!message) {
       return NextResponse.json(
