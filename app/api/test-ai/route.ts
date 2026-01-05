@@ -20,6 +20,8 @@ export async function GET() {
 
   const message = await generateInitialMessage({
     leadId: lead.id,
+    firstName: lead.firstName ?? "there",
+    intent: "test",
   });
 
   return NextResponse.json({
