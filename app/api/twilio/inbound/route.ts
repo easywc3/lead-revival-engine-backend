@@ -26,6 +26,9 @@ export async function POST(req: Request) {
         inboundMessages: {
           orderBy: { createdAt: "asc" },
         },
+        outboundMessages: {
+          orderBy: { createdAt: "asc" },
+        },
       },
     });
 
@@ -43,17 +46,29 @@ export async function POST(req: Request) {
 
     const intentResult = await classifyIntentAI(inboundText);
 
-    // ✅ Build a FULL ConversationContext (this fixes the error)
+    // ✅ FULL ConversationContext (matches type exactly)
     const ctx = {
       leadId: lead.id,
       leadFirstName: lead.firstName,
       leadPhone: lead.phone,
       leadState: lead.state,
+      hasBeenMessaged: lead.hasBeenMessaged,
+
       inboundCount: lead.inboundMessages.length + 1,
+
       recentTranscript: lead.inboundMessages
         .map(m => m.body)
         .slice(-5)
         .join("\n"),
+
+      stats: {
+        inboundCount: lead.inboundMessages.length + 1,
+        outboundCount: lead.outboundMessages.length,
+        lastInboundAt:
+          lead.inboundMessages.at(-1)?.createdAt ?? null,
+        lastOutboundAt:
+          lead.outboundMessages.at(-1)?.createdAt ?? null,
+      },
     };
 
     const reply = await generateAIReply({
