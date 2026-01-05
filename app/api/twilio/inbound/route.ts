@@ -1,70 +1,73 @@
+// app/api/twilio/inbound/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { classifyInboundIntent } from "@/services/intentClassifier";
-import { applyIntentToLead } from "@/services/intentRouter";
 
-/**
- * Twilio inbound SMS webhook
- * MUST NEVER 500
- */
+// ⛔ DO NOT import OpenAI or getOpenAI here
+// ⛔ DO NOT import ai services at top-level
+
 export async function POST(req: Request) {
   try {
-    const raw = await req.text();
-    const params = new URLSearchParams(raw);
-
-    const from = params.get("From")?.trim();
-    const inboundText = params.get("Body")?.trim();
-
-    if (!from || !inboundText) {
-      return NextResponse.json({ ok: true });
+    // ✅ Runtime guard (build-safe)
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn("[twilio inbound] OPENAI_API_KEY missing at runtime");
+      return NextResponse.json({ status: "ignored" });
     }
 
-    const phone = from.startsWith("+") ? from : `+${from}`;
+    const form = await req.formData();
+    const inboundText = String(form.get("Body") ?? "").trim();
+    const from = String(form.get("From") ?? "").trim();
 
-    // Find or create lead
-    let lead = await prisma.lead.findUnique({
-      where: { phone },
-    });
+    if (!inboundText || !from) {
+      return NextResponse.json({ status: "ignored" });
+    }
 
-    if (!lead) {
-      lead = await prisma.lead.create({
-        data: {
-          phone,
-          firstName: "Unknown",
-          state: "CONTACTED",
-          hasBeenMessaged: false,
-          source: "twilio_inbound",
+    const lead = await prisma.lead.findFirst({
+      where: { phone: from },
+      include: {
+        inboundMessages: {
+          orderBy: { createdAt: "asc" },
         },
-      });
-    }
-
-    // Classify intent (AI)
-    const intentResult = await classifyInboundIntent(inboundText);
-
-    // Store inbound message
-    await prisma.inboundMessage.create({
-      data: {
-        leadId: lead.id,
-        fromPhone: phone,
-        body: inboundText,
-        intent: intentResult.intent,
-        confidence: intentResult.confidence,
       },
     });
 
-    // ✅ PASS intentResult (not intent)
-    await applyIntentToLead({
-      leadId: lead.id,
-      intentResult,
+    if (!lead) {
+      return NextResponse.json({ status: "unknown_lead" });
+    }
+
+    // 🔐 LAZY imports (runtime only)
+    const { classifyIntentAI } = await import(
+      "@/services/aiIntentClassifier"
+    );
+    const { generateAIReply } = await import(
+      "@/services/aiResponder"
+    );
+
+    const intentResult = await classifyIntentAI(inboundText);
+
+    const reply = await generateAIReply({
       inboundText,
+      intent: intentResult,
+      ctx: {
+        recentTranscript: lead.inboundMessages
+          .map(m => m.body)
+          .slice(-5)
+          .join("\n"),
+      },
     });
 
-    return NextResponse.json({
-      status: "ok",
-      leadId: lead.id,
-    });
+    if (!reply) {
+      return NextResponse.json({ status: "no_reply" });
+    }
+
+    // OPTIONAL: sendSms here if desired
+    // await sendSms({ to: from, body: reply });
+
+    return NextResponse.json({ status: "ok" });
   } catch (err) {
-    console.error("❌ INBOUND HARD FAIL:", err);
-    return NextResponse.json({ ok: true });
+    console.error("[twilio inbound] error", err);
+    return NextResponse.json(
+      { status: "error" },
+      { status: 500 }
+    );
   }
 }
