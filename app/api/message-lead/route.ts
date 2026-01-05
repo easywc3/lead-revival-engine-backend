@@ -24,9 +24,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const message = await generateInitialMessage({
-      leadId: lead.id,
-    });
+const message = await generateInitialMessage({
+  leadId: lead.id,
+  firstName: lead.firstName,
+  intent: lead.intent ?? "unknown",
+});
+
 
     return NextResponse.json({
       leadId: lead.id,
