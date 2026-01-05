@@ -53,10 +53,13 @@ export async function PATCH(
     return NextResponse.json(updated);
   } catch (err: any) {
     // ✅ Handle duplicate phone cleanly
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === "P2002"
-    ) {
+if (
+  typeof err === "object" &&
+  err !== null &&
+  "code" in err &&
+  (err as any).code === "P2002"
+) {
+
       return NextResponse.json(
         { error: "Phone number already exists on another lead" },
         { status: 409 }
