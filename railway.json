@@ -1,1 +1,6 @@
-﻿{"build":{"builder":"NIXPACKS"},"deploy":{"startCommand":"npm run start"}}
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE"
+  }
+}
