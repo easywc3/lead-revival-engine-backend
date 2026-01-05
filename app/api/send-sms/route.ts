@@ -26,10 +26,18 @@ export async function POST(req: Request) {
       );
     }
 
+    // ✅ FIX: intent comes from latest inbound message, not Lead
+    const latestInbound = await prisma.inboundMessage.findFirst({
+      where: { leadId: lead.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const intent = latestInbound?.intent ?? "UNKNOWN";
+
     const message = await generateInitialMessage({
       leadId: lead.id,
       firstName: lead.firstName ?? "there",
-      intent: lead.intent ?? "unknown",
+      intent,
     });
 
     if (!message) {
@@ -39,7 +47,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ SAFE: message is guaranteed string here
     await sendSms(lead.phone, message);
 
     return NextResponse.json({
