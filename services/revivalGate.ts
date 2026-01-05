@@ -1,7 +1,7 @@
 // ❌ DO NOT import LeadState from Prisma
 // import { LeadState } from "@prisma/client";
 
-// ✅ Local mirror of LeadState (matches DB values exactly)
+// ✅ Local mirror of LeadState enum
 type LeadState =
   | "NEW"
   | "CONTACTED"
