@@ -10,7 +10,7 @@ export type InboundIntent =
   | "INTERESTED"
   | "UNKNOWN";
 
-type IntentResult = {
+export type IntentResult = {
   intent: InboundIntent;
   confidence: number;
   reasoning: string;
