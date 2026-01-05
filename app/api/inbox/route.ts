@@ -14,7 +14,7 @@ export async function GET() {
     });
 
     const messages = [
-      ...inbound.map((m) => ({
+      ...inbound.map((m: (typeof inbound)[number]) => ({
         id: `in-${m.id}`,
         from: m.fromPhone,
         body: m.body,
@@ -22,7 +22,7 @@ export async function GET() {
         direction: "inbound" as const,
         intent: m.intent,
       })),
-      ...outbound.map((m) => ({
+      ...outbound.map((m: (typeof outbound)[number]) => ({
         id: `out-${m.id}`,
         from: "system",
         body: m.body,
