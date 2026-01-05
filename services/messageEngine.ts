@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import { rewriteWithAI } from "@/services/aiRewrite";
 
 type InitialMessageParams = {
@@ -6,10 +7,21 @@ type InitialMessageParams = {
   intent: string;
 };
 
-export async function generateInitialMessage(params: InitialMessageParams) {
+type ContextualReplyParams = {
+  leadId: number;
+  inboundText: string;
+  intent: string;
+};
+
+/**
+ * ✅ INITIAL OUTREACH MESSAGE
+ * Deterministic → then AI rewrite
+ */
+export async function generateInitialMessage(
+  params: InitialMessageParams
+) {
   const name = params.firstName || "there";
 
-  // Deterministic draft (this is IMPORTANT)
   const draftMap: Record<string, string[]> = {
     INTERESTED: [
       `Hi ${name}, glad to hear that. What kind of property are you looking for?`,
@@ -19,9 +31,9 @@ export async function generateInitialMessage(params: InitialMessageParams) {
       `Hi ${name}, happy to explain. What questions do you have?`,
       `Hi ${name}, no problem — what would you like to know?`,
     ],
-    SKEPTICAL: [
-      `Totally fair question. Yes, this is legit — happy to explain how it works.`,
-      `I get the concern. I'm reaching out about a property you asked about earlier.`,
+    CONFUSED: [
+      `Sorry about that — this is regarding a property you asked about earlier.`,
+      `Totally fair question — I'm following up on a home inquiry from earlier.`,
     ],
     DEFER: [
       `Sounds good — I can check back later. When works best for you?`,
@@ -32,14 +44,32 @@ export async function generateInitialMessage(params: InitialMessageParams) {
     `Hi ${name}, just following up to see if you had any questions.`,
   ];
 
-  // Controlled randomness
-  const draft = drafts[Math.floor(Math.random() * drafts.length)];
+  const draft =
+    drafts[Math.floor(Math.random() * drafts.length)];
 
-  // AI rewrite layer
-  const rewritten = await rewriteWithAI({
+  return rewriteWithAI({
     draft,
     intent: params.intent,
   });
+}
 
-  return rewritten;
+/**
+ * ✅ CONTEXTUAL FOLLOW-UP REPLY
+ * Used after inbound messages
+ */
+export async function generateContextualReply(
+  params: ContextualReplyParams
+) {
+  const lead = await prisma.lead.findUnique({
+    where: { id: params.leadId },
+  });
+
+  const name = lead?.firstName || "there";
+
+  const draft = `Hi ${name}, thanks for your message. ${params.inboundText}`;
+
+  return rewriteWithAI({
+    draft,
+    intent: params.intent,
+  });
 }
