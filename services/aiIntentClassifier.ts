@@ -19,7 +19,7 @@ export type IntentResult = {
 export async function classifyIntentAI(
   inboundText: string
 ): Promise<IntentResult> {
-  // ⛔ Safe guard — build + dev safe
+  // ✅ BUILD SAFE: no OpenAI usage without key
   if (!process.env.OPENAI_API_KEY) {
     return {
       intent: "UNKNOWN",
@@ -28,22 +28,21 @@ export async function classifyIntentAI(
     };
   }
 
-  const openai = getOpenAI();
-
-  const systemPrompt = `
-You classify inbound SMS replies from cold real-estate leads.
-
-Return ONLY valid JSON.
-Do NOT include markdown.
-Do NOT include commentary.
-`;
+  const openai = getOpenAI(); // ✅ now NON-nullable
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0,
     messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: inboundText },
+      {
+        role: "system",
+        content:
+          "Classify inbound SMS intent. Respond ONLY with JSON.",
+      },
+      {
+        role: "user",
+        content: inboundText,
+      },
     ],
     response_format: {
       type: "json_schema",
@@ -62,7 +61,9 @@ Do NOT include commentary.
     },
   });
 
-  const parsed = JSON.parse(response.choices[0].message.content || "{}");
+  const parsed = JSON.parse(
+    response.choices[0].message.content || "{}"
+  );
 
   return {
     intent: parsed.intent ?? "UNKNOWN",
