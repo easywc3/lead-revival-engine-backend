@@ -16,7 +16,7 @@ export async function runInitialMessageRule() {
     try {
       if (!lead.phone) continue;
 
-      // 1️⃣ Generate AI message (FIXED PARAM SHAPE)
+      // 1️⃣ Generate AI message
       const message = await generateInitialMessage({
         leadId: lead.id,
         firstName: lead.firstName,
@@ -27,8 +27,10 @@ export async function runInitialMessageRule() {
         throw new Error("AI returned empty message");
       }
 
-      // 2️⃣ Send (DEV-safe)
-      await sendSms(lead.phone, message, {
+      // 2️⃣ Send (FIXED — object signature)
+      await sendSms({
+        to: lead.phone,
+        body: message,
         leadId: lead.id,
         sentBy: "ai",
         reason: "initial_outreach",
