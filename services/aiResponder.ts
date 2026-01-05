@@ -7,17 +7,35 @@ export async function generateAIReply(params: {
   intent: IntentResult;
   ctx: ConversationContext;
 }): Promise<string | null> {
-  if (!process.env.OPENAI_API_KEY) return null;
+  const inboundText = (params.inboundText || "").trim();
+  const { intent, ctx } = params;
+
+  // ⛔ HARD STOP — build & runtime safe
+  if (!process.env.OPENAI_API_KEY) {
+    return null;
+  }
 
   const openai = getOpenAI();
-  const { inboundText, intent, ctx } = params;
+  if (!openai) {
+    return null;
+  }
 
-  const isIdentityRequest = intent.signals.includes("IDENTITY_REQUEST");
+  // ✅ Identity questions are CONFUSED intent
+  const isIdentityRequest = intent.intent === "CONFUSED";
 
   const systemPrompt = `
 You are a real human texting on behalf of a real estate agent.
-ONE short SMS only.
-No emojis. No fluff.
+
+Rules:
+- ONE short SMS only
+- Sound human and specific
+- NEVER say "checking in"
+- NEVER say "hope you're doing well"
+- NEVER use placeholders like [Your Name] or [Your Brokerage]
+- NEVER be salesy
+- If the lead asks who this is, explain WHY you're texting (past context), not your title
+- Offer an easy out if timing is bad
+- No emojis
 `;
 
   const userPrompt = `
@@ -25,23 +43,40 @@ Inbound message:
 "${inboundText}"
 
 Recent context:
-${ctx.recentTranscript || "(none)"}
+${ctx.recentTranscript || "(no prior messages)"}
 
 Intent: ${intent.intent}
-Signals: ${intent.signals.join(", ") || "none"}
+
+Write the best possible reply.
 `;
 
-  const resp = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.8,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-  });
+  try {
+    const resp = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.8,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    });
 
-  const text = resp.choices[0]?.message?.content?.trim();
-  if (!text) return null;
+    let text = resp.choices[0]?.message?.content?.trim();
 
-  return text.slice(0, 500);
+    // HARD SAFETY
+    if (!text || text.length < 3) {
+      return null;
+    }
+
+    // Guard against placeholders
+    if (text.includes("[Your") || text.includes("Your Name")) {
+      return isIdentityRequest
+        ? "Totally fair — you reached out a while back about real estate info, and I’m following up. If now’s not a good time, no worries at all."
+        : null;
+    }
+
+    return text.slice(0, 500);
+  } catch (err) {
+    console.error("[AI responder failed]", err);
+    return null;
+  }
 }
