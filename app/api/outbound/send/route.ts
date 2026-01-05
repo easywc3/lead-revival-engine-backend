@@ -9,6 +9,23 @@ const QUIET_START = 9;
 const QUIET_END = 18;
 const MAX_RETRIES = 3;
 
+/**
+ * Domain-safe LeadState (NO READY)
+ */
+type DomainLeadState =
+  | "NEW"
+  | "CONTACTED"
+  | "RESPONDED"
+  | "STOPPED";
+
+/**
+ * Normalize Prisma state → domain state
+ */
+function normalizeLeadState(state: string): DomainLeadState {
+  if (state === "READY") return "NEW";
+  return state as DomainLeadState;
+}
+
 function isQuietHours() {
   const hour = new Date().getHours();
   return hour < QUIET_START || hour >= QUIET_END;
@@ -41,7 +58,7 @@ export async function POST() {
     });
 
     const suppression = checkSuppression({
-      leadState: lead.state,
+      leadState: normalizeLeadState(lead.state),
       latestInboundIntent: latestInbound?.intent,
     });
 
@@ -56,7 +73,7 @@ export async function POST() {
     const decision = checkRevivalEligibility({
       lead: {
         id: lead.id,
-        state: lead.state,
+        state: normalizeLeadState(lead.state),
         retryCount: lead.retryCount,
         hasBeenMessaged: lead.hasBeenMessaged,
         outboundMessageCount: lead._count.outboundMessages,
