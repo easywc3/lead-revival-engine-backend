@@ -16,9 +16,11 @@ export async function runInitialMessageRule() {
     try {
       if (!lead.phone) continue;
 
-      // 1️⃣ Generate AI message
+      // 1️⃣ Generate AI message (FIXED PARAM SHAPE)
       const message = await generateInitialMessage({
         leadId: lead.id,
+        firstName: lead.firstName,
+        intent: "UNKNOWN",
       });
 
       if (!message || !message.trim()) {
@@ -27,7 +29,7 @@ export async function runInitialMessageRule() {
 
       // 2️⃣ Send (DEV-safe)
       await sendSms(lead.phone, message, {
-        leadId: lead.id, // ✅ THIS WAS MISSING BEFORE
+        leadId: lead.id,
         sentBy: "ai",
         reason: "initial_outreach",
       });
