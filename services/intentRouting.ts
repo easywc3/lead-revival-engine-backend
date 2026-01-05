@@ -1,4 +1,13 @@
-import { InboundIntent } from "@prisma/client";
+// ❌ DO NOT import from Prisma — this is NOT a Prisma enum
+type InboundIntent =
+  | "OPT_OUT"
+  | "NOT_INTERESTED"
+  | "CONFUSED"
+  | "SELLER_INTEREST"
+  | "BUYER_INTEREST"
+  | "DEFER"
+  | "INTERESTED"
+  | "UNKNOWN";
 
 export type IntentRoute =
   | "SUPPRESS"
