@@ -1,9 +1,18 @@
 import OpenAI from "openai";
-import { InboundIntent } from "@prisma/client";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+export type InboundIntent =
+  | "OPT_OUT"
+  | "NOT_INTERESTED"
+  | "CONFUSED"
+  | "SELLER_INTEREST"
+  | "BUYER_INTEREST"
+  | "DEFER"
+  | "INTERESTED"
+  | "UNKNOWN";
 
 type IntentResult = {
   intent: InboundIntent;
