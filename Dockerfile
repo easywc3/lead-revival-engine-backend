@@ -5,9 +5,13 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# ✅ ADD THIS LINE (CRITICAL)
+# ✅ COPY PRISMA FILES FIRST
+COPY prisma ./prisma
+
+# ✅ NOW generate client
 RUN npx prisma generate
 
+# ✅ THEN copy the rest of the app
 COPY . .
 
 RUN npm run build
