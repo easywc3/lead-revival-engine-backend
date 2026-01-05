@@ -11,13 +11,15 @@ export async function generateAIReply(params: {
   const { intent, ctx } = params;
 
   // ⛔ Hard stop if no API key at runtime
+  // (CRITICAL: prevents Next build crash)
   if (!process.env.OPENAI_API_KEY) {
     return null;
   }
 
   const openai = getOpenAI();
 
-  const isIdentityRequest = intent.signals?.includes("IDENTITY_REQUEST");
+  const isIdentityRequest =
+    intent.signals?.includes("IDENTITY_REQUEST");
 
   const systemPrompt = `
 You are a real human texting on behalf of a real estate agent.
@@ -64,7 +66,7 @@ Write the best possible reply.
       return null;
     }
 
-    // Extra guard against placeholders sneaking in
+    // Guard against placeholders sneaking in
     if (text.includes("[Your") || text.includes("Your Name")) {
       return isIdentityRequest
         ? "Totally fair — you reached out a while back about real estate info, and I’m following up. If now’s not a good time, no worries at all."
