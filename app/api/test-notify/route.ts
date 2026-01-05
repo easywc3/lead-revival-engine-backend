@@ -18,9 +18,10 @@ export async function POST() {
     });
   }
 
-  // 🔥 notifyHuman ONLY accepts leadId
   await notifyHuman({
     leadId: lead.id,
+    reason: "TEST_HANDOFF",
+    inboundText: "Yes, I'm interested. Can you explain?",
   });
 
   return NextResponse.json({
