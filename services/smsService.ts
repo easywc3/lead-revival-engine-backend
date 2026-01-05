@@ -29,7 +29,6 @@ export async function sendSms(
       data: {
         leadId: opts.leadId,
         body,
-        status: "sent",
         reason: opts.reason ?? "dev_mode_no_twilio",
       },
     });
