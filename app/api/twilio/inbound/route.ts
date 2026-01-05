@@ -1,4 +1,3 @@
-// app/api/twilio/inbound/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -44,15 +43,23 @@ export async function POST(req: Request) {
 
     const intentResult = await classifyIntentAI(inboundText);
 
+    // ✅ Build a FULL ConversationContext (this fixes the error)
+    const ctx = {
+      leadId: lead.id,
+      leadFirstName: lead.firstName,
+      leadPhone: lead.phone,
+      leadState: lead.state,
+      inboundCount: lead.inboundMessages.length + 1,
+      recentTranscript: lead.inboundMessages
+        .map(m => m.body)
+        .slice(-5)
+        .join("\n"),
+    };
+
     const reply = await generateAIReply({
       inboundText,
       intent: intentResult,
-      ctx: {
-        recentTranscript: lead.inboundMessages
-          .map(m => m.body)
-          .slice(-5)
-          .join("\n"),
-      },
+      ctx,
     });
 
     if (!reply) {
