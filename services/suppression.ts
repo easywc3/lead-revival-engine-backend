@@ -1,4 +1,19 @@
-import { LeadState, InboundIntent } from "@prisma/client";
+type LeadState =
+  | "NEW"
+  | "CONTACTED"
+  | "RESPONDED"
+  | "STOPPED";
+
+type InboundIntent =
+  | "OPT_OUT"
+  | "NOT_INTERESTED"
+  | "CONFUSED"
+  | "SELLER_INTEREST"
+  | "BUYER_INTEREST"
+  | "DEFER"
+  | "INTERESTED"
+  | "UNKNOWN"
+  | "WRONG_PERSON";
 
 export function checkSuppression(params: {
   leadState: LeadState;
