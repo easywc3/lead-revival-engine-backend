@@ -4,12 +4,12 @@ import type { InboundMessage, OutboundMessage } from "@prisma/client";
 
 export async function GET() {
   try {
-    const inbound = await prisma.inboundMessage.findMany({
+    const inbound: InboundMessage[] = await prisma.inboundMessage.findMany({
       orderBy: { createdAt: "desc" },
       take: 50,
     });
 
-    const outbound = await prisma.outboundMessage.findMany({
+    const outbound: OutboundMessage[] = await prisma.outboundMessage.findMany({
       orderBy: { sentAt: "desc" },
       take: 50,
     });
@@ -27,7 +27,7 @@ export async function GET() {
         id: `out-${m.id}`,
         from: "system",
         body: m.body,
-        createdAt: m.sentAt, // ✅ correct
+        createdAt: m.sentAt,
         direction: "outbound" as const,
         reason: m.reason,
       })),
