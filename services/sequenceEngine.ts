@@ -1,4 +1,6 @@
-import { Lead } from "@prisma/client";
+type LeadLike = {
+  state: "RESPONDED" | "STOPPED" | string;
+};
 
 type SequenceDecision =
   | { action: "none"; reason: string }
@@ -8,7 +10,7 @@ type SequenceDecision =
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function decideNextSequenceStep(params: {
-  lead: Lead;
+  lead: LeadLike;
   outboundCount: number;
   lastOutboundAt: Date | null;
   now?: Date;
