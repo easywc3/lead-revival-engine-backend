@@ -18,11 +18,13 @@ export async function POST() {
     });
   }
 
+  // 🔥 notifyHuman ONLY accepts leadId
   await notifyHuman({
     leadId: lead.id,
-    message: "Yes, I'm interested. Can you explain?",
-    confidence: 0.95,
   });
 
-  return NextResponse.json({ status: "sent", leadId: lead.id });
+  return NextResponse.json({
+    status: "sent",
+    leadId: lead.id,
+  });
 }
