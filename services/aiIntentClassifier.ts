@@ -10,19 +10,10 @@ export type InboundIntent =
   | "INTERESTED"
   | "UNKNOWN";
 
-export type IntentSignal =
-  | "CALL_REQUEST"
-  | "READY_TO_MOVE"
-  | "PRICE_SPECIFIC"
-  | "TIMELINE_SOON"
-  | "IDENTITY_REQUEST"
-  | "FORCE_REPLY";
-
 export type IntentResult = {
   intent: InboundIntent;
   confidence: number;
   reasoning: string;
-  signals: IntentSignal[]; // ✅ ALWAYS PRESENT
 };
 
 export async function classifyIntentAI(
@@ -30,12 +21,37 @@ export async function classifyIntentAI(
 ): Promise<IntentResult> {
   const openai = getOpenAI();
 
+  // ✅ BUILD + RUNTIME SAFE GUARD
+  if (!openai) {
+    return {
+      intent: "UNKNOWN",
+      confidence: 0,
+      reasoning: "OpenAI unavailable",
+    };
+  }
+
   const systemPrompt = `
 You classify inbound SMS replies from cold real-estate leads.
 
 Return ONLY valid JSON.
 Do NOT include markdown.
 Do NOT include commentary.
+
+Valid intents:
+- OPT_OUT
+- NOT_INTERESTED
+- CONFUSED
+- SELLER_INTEREST
+- BUYER_INTEREST
+- DEFER
+- INTERESTED
+- UNKNOWN
+
+Rules:
+- OPT_OUT overrides everything
+- CONFUSED means they don't know who is texting
+- DEFER means timing-based hesitation
+- INTERESTED means clear positive intent
 `;
 
   const userPrompt = `
@@ -59,12 +75,26 @@ Classify the intent.
         schema: {
           type: "object",
           properties: {
-            intent: { type: "string" },
-            confidence: { type: "number" },
-            reasoning: { type: "string" },
-            signals: {
-              type: "array",
-              items: { type: "string" },
+            intent: {
+              type: "string",
+              enum: [
+                "OPT_OUT",
+                "NOT_INTERESTED",
+                "CONFUSED",
+                "SELLER_INTEREST",
+                "BUYER_INTEREST",
+                "DEFER",
+                "INTERESTED",
+                "UNKNOWN",
+              ],
+            },
+            confidence: {
+              type: "number",
+              minimum: 0,
+              maximum: 1,
+            },
+            reasoning: {
+              type: "string",
             },
           },
           required: ["intent", "confidence", "reasoning"],
@@ -73,12 +103,22 @@ Classify the intent.
     },
   });
 
-  const parsed = JSON.parse(response.choices[0].message.content || "{}");
+  let parsed: any = {};
+
+  try {
+    parsed = JSON.parse(
+      response.choices[0]?.message?.content ?? "{}"
+    );
+  } catch {
+    parsed = {};
+  }
 
   return {
     intent: parsed.intent ?? "UNKNOWN",
-    confidence: parsed.confidence ?? 0,
+    confidence:
+      typeof parsed.confidence === "number"
+        ? parsed.confidence
+        : 0,
     reasoning: parsed.reasoning ?? "",
-    signals: parsed.signals ?? [], // ✅ SAFE DEFAULT
   };
 }
