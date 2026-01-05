@@ -1,29 +1,39 @@
+// services/aiRewrite.ts
 import { getOpenAI } from "@/services/openaiClient";
 
-export async function rewriteWithAI(params: {
+type RewriteParams = {
   draft: string;
   intent: string;
-}): Promise<string> {
-  if (!process.env.OPENAI_API_KEY) {
-    return params.draft; // ✅ safe fallback
-  }
+};
 
+export async function rewriteWithAI({
+  draft,
+  intent,
+}: RewriteParams): Promise<string> {
   const openai = getOpenAI();
+  if (!openai) return draft;
 
-  const resp = await openai.chat.completions.create({
+  const systemPrompt = `
+You rewrite SMS messages for lead follow-up.
+
+Rules:
+- Under 320 characters
+- Calm, human, professional
+- No emojis
+- No pressure
+`;
+
+  const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
-    temperature: 0.6,
+    temperature: 0.7,
     messages: [
-      {
-        role: "system",
-        content: "Rewrite SMS to sound natural and human.",
-      },
+      { role: "system", content: systemPrompt },
       {
         role: "user",
-        content: `Intent: ${params.intent}\nText: ${params.draft}`,
+        content: `Intent: ${intent}\nDraft:\n"${draft}"`,
       },
     ],
   });
 
-  return resp.choices[0]?.message?.content?.trim() || params.draft;
+  return response.choices[0]?.message?.content?.trim() || draft;
 }

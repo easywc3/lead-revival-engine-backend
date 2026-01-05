@@ -1,17 +1,21 @@
+// services/openaiClient.ts
 import OpenAI from "openai";
 
-let client: OpenAI | undefined;
+let _client: OpenAI | null = null;
 
-export function getOpenAI(): OpenAI {
-  if (client) return client;
+/**
+ * Lazily get OpenAI client.
+ * Returns null if OPENAI_API_KEY is missing.
+ * SAFE during next build.
+ */
+export function getOpenAI(): OpenAI | null {
+  if (_client) return _client;
 
   const apiKey = process.env.OPENAI_API_KEY;
-
-  // ⛔ Never throw at import time — ONLY when called
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY missing at runtime");
+    return null;
   }
 
-  client = new OpenAI({ apiKey });
-  return client;
+  _client = new OpenAI({ apiKey });
+  return _client;
 }
