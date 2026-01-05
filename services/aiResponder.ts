@@ -1,10 +1,6 @@
-import OpenAI from "openai";
+import { getOpenAI } from "@/services/openaiClient";
 import type { IntentResult } from "@/services/intentClassifier";
 import type { ConversationContext } from "@/services/conversationContext";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
 
 export async function generateAIReply(params: {
   inboundText: string;
@@ -14,9 +10,12 @@ export async function generateAIReply(params: {
   const inboundText = (params.inboundText || "").trim();
   const { intent, ctx } = params;
 
+  // ⛔ Hard stop if no API key at runtime
   if (!process.env.OPENAI_API_KEY) {
     return null;
   }
+
+  const openai = getOpenAI();
 
   const isIdentityRequest = intent.signals?.includes("IDENTITY_REQUEST");
 

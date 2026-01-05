@@ -1,8 +1,4 @@
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getOpenAI } from "@/services/openaiClient";
 
 export type InboundIntent =
   | "OPT_OUT"
@@ -23,6 +19,8 @@ type IntentResult = {
 export async function classifyIntentAI(
   inboundText: string
 ): Promise<IntentResult> {
+  const openai = getOpenAI();
+
   const systemPrompt = `
 You classify inbound SMS replies from cold real-estate leads.
 
