@@ -30,8 +30,8 @@ export async function POST(req: Request) {
       lead = await prisma.lead.create({
         data: {
           phone,
-          firstName: "Unknown", // ✅ REQUIRED BY SCHEMA
-          state: "CONTACTED",   // ✅ STRING — NOT Prisma enum
+          firstName: "Unknown",
+          state: "CONTACTED",
           hasBeenMessaged: false,
           source: "twilio_inbound",
         },
@@ -52,10 +52,10 @@ export async function POST(req: Request) {
       },
     });
 
-    // Apply intent (router controls replies + state)
+    // ✅ PASS intentResult (not intent)
     await applyIntentToLead({
       leadId: lead.id,
-      intent: intentResult.intent,
+      intentResult,
       inboundText,
     });
 
@@ -65,8 +65,6 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("❌ INBOUND HARD FAIL:", err);
-
-    // Twilio-safe response: NEVER 500
     return NextResponse.json({ ok: true });
   }
 }
