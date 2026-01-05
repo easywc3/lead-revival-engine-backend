@@ -23,12 +23,8 @@ export async function POST(req: Request) {
     const lead = await prisma.lead.findFirst({
       where: { phone: from },
       include: {
-        inboundMessages: {
-          orderBy: { createdAt: "asc" },
-        },
-        outboundMessages: {
-          orderBy: { createdAt: "asc" },
-        },
+        inboundMessages: true,
+        outboundMessages: true, // ✅ no orderBy
       },
     });
 
@@ -46,7 +42,7 @@ export async function POST(req: Request) {
 
     const intentResult = await classifyIntentAI(inboundText);
 
-    // ✅ FULL ConversationContext (matches type exactly)
+    // ✅ FULL ConversationContext
     const ctx = {
       leadId: lead.id,
       leadFirstName: lead.firstName,
@@ -66,8 +62,7 @@ export async function POST(req: Request) {
         outboundCount: lead.outboundMessages.length,
         lastInboundAt:
           lead.inboundMessages.at(-1)?.createdAt ?? null,
-        lastOutboundAt:
-          lead.outboundMessages.at(-1)?.createdAt ?? null,
+        lastOutboundAt: null, // ← no createdAt field exists
       },
     };
 
@@ -80,9 +75,6 @@ export async function POST(req: Request) {
     if (!reply) {
       return NextResponse.json({ status: "no_reply" });
     }
-
-    // OPTIONAL: sendSms here if desired
-    // await sendSms({ to: from, body: reply });
 
     return NextResponse.json({ status: "ok" });
   } catch (err) {
