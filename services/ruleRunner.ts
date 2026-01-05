@@ -27,12 +27,10 @@ export async function runInitialMessageRule() {
         throw new Error("AI returned empty message");
       }
 
-      // 2️⃣ Send (FIXED — object signature)
+      // 2️⃣ Send SMS (STRICT signature)
       await sendSms({
         to: lead.phone,
         body: message,
-        leadId: lead.id,
-        sentBy: "ai",
         reason: "initial_outreach",
       });
 
