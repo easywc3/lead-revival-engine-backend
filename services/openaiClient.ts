@@ -1,21 +1,17 @@
 import OpenAI from "openai";
 
-/**
- * Build-safe OpenAI client factory.
- *
- * CRITICAL:
- * - Do NOT create OpenAI at import time
- * - Next.js WILL import this during build
- * - API key may not exist during build
- */
-export function getOpenAI(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY;
+let client: OpenAI | null = null;
 
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not set");
+export function getOpenAI(): OpenAI | null {
+  if (!process.env.OPENAI_API_KEY) {
+    return null;
   }
 
-  return new OpenAI({
-    apiKey,
-  });
+  if (!client) {
+    client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+
+  return client;
 }

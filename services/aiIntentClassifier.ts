@@ -19,6 +19,15 @@ export type IntentResult = {
 export async function classifyIntentAI(
   inboundText: string
 ): Promise<IntentResult> {
+  // ⛔ Safe guard — build + dev safe
+  if (!process.env.OPENAI_API_KEY) {
+    return {
+      intent: "UNKNOWN",
+      confidence: 0,
+      reasoning: "AI disabled",
+    };
+  }
+
   const openai = getOpenAI();
 
   const systemPrompt = `
@@ -27,29 +36,6 @@ You classify inbound SMS replies from cold real-estate leads.
 Return ONLY valid JSON.
 Do NOT include markdown.
 Do NOT include commentary.
-
-Valid intents:
-- OPT_OUT
-- NOT_INTERESTED
-- CONFUSED
-- SELLER_INTEREST
-- BUYER_INTEREST
-- DEFER
-- INTERESTED
-- UNKNOWN
-
-Rules:
-- OPT_OUT overrides everything
-- CONFUSED means they don't know who is texting
-- DEFER means timing-based hesitation
-- INTERESTED means clear positive intent
-`;
-
-  const userPrompt = `
-Inbound message:
-"${inboundText}"
-
-Classify the intent.
 `;
 
   const response = await openai.chat.completions.create({
@@ -57,36 +43,18 @@ Classify the intent.
     temperature: 0,
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: "user", content: inboundText },
     ],
     response_format: {
       type: "json_schema",
       json_schema: {
-        name: "intent_classification",
+        name: "intent",
         schema: {
           type: "object",
           properties: {
-            intent: {
-              type: "string",
-              enum: [
-                "OPT_OUT",
-                "NOT_INTERESTED",
-                "CONFUSED",
-                "SELLER_INTEREST",
-                "BUYER_INTEREST",
-                "DEFER",
-                "INTERESTED",
-                "UNKNOWN",
-              ],
-            },
-            confidence: {
-              type: "number",
-              minimum: 0,
-              maximum: 1,
-            },
-            reasoning: {
-              type: "string",
-            },
+            intent: { type: "string" },
+            confidence: { type: "number" },
+            reasoning: { type: "string" },
           },
           required: ["intent", "confidence", "reasoning"],
         },
@@ -94,9 +62,7 @@ Classify the intent.
     },
   });
 
-  const parsed = JSON.parse(
-    response.choices[0].message.content || "{}"
-  );
+  const parsed = JSON.parse(response.choices[0].message.content || "{}");
 
   return {
     intent: parsed.intent ?? "UNKNOWN",
