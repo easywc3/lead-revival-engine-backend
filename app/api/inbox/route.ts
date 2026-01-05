@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { InboundMessage, OutboundMessage } from "@prisma/client";
 
 export async function GET() {
   try {
@@ -14,7 +15,7 @@ export async function GET() {
     });
 
     const messages = [
-      ...inbound.map((m) => ({
+      ...inbound.map((m: InboundMessage) => ({
         id: `in-${m.id}`,
         from: m.fromPhone,
         body: m.body,
@@ -22,11 +23,11 @@ export async function GET() {
         direction: "inbound" as const,
         intent: m.intent,
       })),
-      ...outbound.map((m) => ({
+      ...outbound.map((m: OutboundMessage) => ({
         id: `out-${m.id}`,
         from: "system",
         body: m.body,
-        createdAt: m.sentAt, // ✅ FIX HERE
+        createdAt: m.sentAt, // ✅ correct
         direction: "outbound" as const,
         reason: m.reason,
       })),
