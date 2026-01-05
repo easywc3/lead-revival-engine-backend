@@ -103,7 +103,7 @@ const wantsHuman =
   }
 
   // 🤖 AI CONTINUES CONVERSATION
-  if (!lead.hasBeenMessaged || signals.includes("FORCE_REPLY")) {
+  if (!lead.hasBeenMessaged || signalList.includes("FORCE_REPLY")) {
     const ctx = await buildConversationContext({ leadId });
 
     const reply = await generateAIReply({
