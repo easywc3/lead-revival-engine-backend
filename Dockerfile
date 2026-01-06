@@ -23,4 +23,6 @@ COPY . .
 RUN npm run build
 
 EXPOSE 3000
-CMD ["npm", "start"]
+
+# IMPORTANT: bind to 0.0.0.0 so Railway can reach it
+CMD ["npx", "next", "start", "-H", "0.0.0.0", "-p", "3000"]
