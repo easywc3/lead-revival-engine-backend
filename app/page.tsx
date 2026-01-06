@@ -1,41 +1,50 @@
-// app/page.tsx
-import { prisma } from "@/lib/prisma";
+export const dynamic = 'force-dynamic';
+
+import Link from "next/link";
+
+async function getLeads() {
+  const res = await fetch("/api/leads", {
+    cache: "no-store"
+  });
+
+  if (!res.ok) {
+    return [];
+  }
+
+  return res.json();
+}
 
 export default async function Home() {
-
-  // Direct Prisma query instead of internal HTTP
-  const leads = await prisma.lead.findMany({
-    orderBy: {
-      id: "asc"
-    }
-  });
+  const leads = await getLeads();
 
   return (
     <main className="min-h-screen bg-white text-black">
       <div className="mx-auto max-w-4xl px-6 py-12">
-
-        <h1 className="text-3xl font-bold">
-          Lead Revival Engine – Operator Home
-        </h1>
+        <h1 className="text-3xl font-bold">Lead Revival Engine</h1>
 
         <p className="mt-2 text-gray-600">
-          Deterministic internal dashboard
+          Root landing page
         </p>
 
-        <div className="mt-6 rounded-lg border p-4">
-          <p>Total Leads in DB: <strong>{leads.length}</strong></p>
+        <div className="mt-8 rounded-lg border p-4">
+          <h2 className="text-lg font-semibold mb-4">Leads</h2>
 
-          <p className="mt-4">
-            <a
-              href="/dashboard/leads"
-              className="underline font-semibold text-blue-600"
-            >
-              Go to Leads Dashboard
-            </a>
-          </p>
-
+          {leads.length === 0 ? (
+            <p>No leads yet.</p>
+          ) : (
+            <ul>
+              {leads.map((lead: any) => (
+                <li key={lead.id}>
+                  {lead.firstName} – {lead.phone} – {lead.state}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
+        <div className="mt-6">
+          <Link href="/dashboard">Go to Dashboard</Link>
+        </div>
       </div>
     </main>
   );
