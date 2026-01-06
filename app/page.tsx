@@ -1,19 +1,19 @@
-// app/page.tsx
-import { NextResponse } from "next/server";
+import Link from "next/link";
+import { prisma } from "@/services/openaiClient";
+import { LeadState } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 async function getLeads() {
-  const res = await fetch("/api/leads", {
-    cache: "no-store",
+  return prisma.lead.findMany({
+    orderBy: {
+      createdAt: "asc",
+    },
   });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch leads");
-  }
-
-  return res.json();
 }
 
 export default async function Home() {
+
   const leads = await getLeads();
 
   return (
@@ -24,13 +24,20 @@ export default async function Home() {
         {leads.length === 0 ? (
           <p>No leads yet.</p>
         ) : (
-          <table>
+          <table className="mt-6 border-collapse">
+            <thead>
+              <tr className="font-semibold border-b">
+                <td className="px-2 py-1">Name</td>
+                <td className="px-2 py-1">Phone</td>
+                <td className="px-2 py-1">State</td>
+              </tr>
+            </thead>
             <tbody>
-              {leads.map((lead: any) => (
-                <tr key={lead.id}>
-                  <td>{lead.firstName}</td>
-                  <td>{lead.phone}</td>
-                  <td>{lead.state}</td>
+              {leads.map((lead) => (
+                <tr key={lead.id} className="border-b">
+                  <td className="px-2 py-1">{lead.firstName}</td>
+                  <td className="px-2 py-1">{lead.phone}</td>
+                  <td className="px-2 py-1">{lead.state}</td>
                 </tr>
               ))}
             </tbody>
