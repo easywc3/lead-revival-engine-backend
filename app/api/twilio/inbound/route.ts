@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    // If AI key is missing, gracefully degrade
+    // Graceful degradation if AI key is not set
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ status: "ignored" });
     }
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       where: { phone: from },
       include: {
         inboundMessages: {
-          orderBy: { id: "asc" }   // createdAt not in model
+          orderBy: { id: "asc" }
         },
         outboundMessages: {
           orderBy: { id: "asc" }
@@ -31,52 +31,38 @@ export async function POST(req: Request) {
       }
     });
 
-    // If we can’t find the lead, return cleanly
     if (!lead) {
       return NextResponse.json({ status: "unknown_lead" });
     }
 
-    // Import AI services lazily
+    // Lazy import AI services at runtime
     const { classifyIntentAI } = await import("@/services/aiIntentClassifier");
     const { generateAIReply } = await import("@/services/aiResponder");
 
     // Classify the intent of the inbound message
     const intentResult = await classifyIntentAI(inboundText);
 
-    // Build a FULL ConversationContext object that matches the shared type
+    // Build the REAL conversation context using the shared builder
     const ctx = await import("@/services/conversationContext").then(mod => {
       return mod.buildConversationContext({
         leadId: lead.id
       });
     });
 
-    // Generate AI reply using the REAL context
+    // Generate AI reply using the actual context
     const reply = await generateAIReply({
       inboundText,
       intent: intentResult,
-      ctx: {
-        leadId: lead.id,
-        leadFirstName: lead.firstName ?? "",
-        leadPhone: lead.phone,
-        leadState: lead.state,
-        hasBeenMessaged: lead.hasBeenMessaged,
-        stats: {
-          inboundCount: ctx.stats.inboundCount,
-          outboundCount: ctx.stats.outboundCount
-        },
-        inboundCount: ctx.stats.inboundCount,
-        recentTranscript: ctx.recentTranscript
-      }
+      ctx
     });
 
-    // If no reply could be generated, return cleanly
     if (!reply) {
       return NextResponse.json({ status: "no_reply" });
     }
 
-    // Everything succeeded
+    // Respond cleanly
     return NextResponse.json({ status: "processed", reply });
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
     return NextResponse.json({ status: "error" }, { status: 500 });
   }
