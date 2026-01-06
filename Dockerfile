@@ -19,8 +19,10 @@ COPY . .
 # Build Next.js
 RUN npm run build
 
-# Railway will route to the port it assigns
+# Railway will still set PORT dynamically; expose is just documentation
 EXPOSE 3000
 
-# Start Next.js using the real binary path (no PATH ambiguity)
-CMD ["node", "./node_modules/next/dist/bin/next", "start", "-H", "0.0.0.0", "-p", "3000"]
+# IMPORTANT:
+# - Use the real Next binary path (prevents "/app/next" errors)
+# - Bind to Railway's PORT (prevents healthcheck "service unavailable")
+CMD ["sh", "-c", "node ./node_modules/next/dist/bin/next start -H 0.0.0.0 -p ${PORT:-3000}"]
