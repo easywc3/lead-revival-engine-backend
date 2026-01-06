@@ -2,29 +2,28 @@ FROM node:22-slim
 
 WORKDIR /app
 
-# System deps required by Prisma
+# System dependencies required by Prisma engine
 RUN apt-get update && apt-get install -y \
   openssl \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# Install deps
+# Install Node dependencies
 COPY package*.json ./
 RUN npm install
 
-# Prisma schema first
+# Copy Prisma schema and generate Prisma client
 COPY prisma ./prisma
 RUN npx prisma generate
 
-# App source
+# Copy full application source
 COPY . .
 
-# Build
+# Build the Next.js application
 RUN npm run build
 
+# Expose the default port (Railway will still override with PORT env var)
 EXPOSE 3000
 
-# IMPORTANT: bind to 0.0.0.0 so Railway can reach it
-EXPOSE 3000
-
+# Explicit runtime command with Railway PORT expansion
 CMD ["sh", "-c", "npx next start -H 0.0.0.0 -p $PORT"]
