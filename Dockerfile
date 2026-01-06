@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/
 
 # Dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Prisma client
 COPY prisma ./prisma
@@ -19,8 +19,6 @@ COPY . .
 # Build Next.js
 RUN npm run build
 
-# Expose deterministic port
 EXPOSE 3000
 
-# Start the app on the same port Railway expects
 CMD ["next", "start", "-H", "0.0.0.0", "-p", "3000"]

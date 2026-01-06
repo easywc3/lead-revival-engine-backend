@@ -1,20 +1,12 @@
-import Link from "next/link";
-import { prisma } from "@/services/openaiClient";
-import { LeadState } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-async function getLeads() {
-  return prisma.lead.findMany({
-    orderBy: {
-      createdAt: "asc",
-    },
-  });
-}
-
 export default async function Home() {
 
-  const leads = await getLeads();
+  const leads = await prisma.lead.findMany({
+    orderBy: { createdAt: "asc" }
+  });
 
   return (
     <main className="min-h-screen bg-white text-black">
@@ -43,6 +35,7 @@ export default async function Home() {
             </tbody>
           </table>
         )}
+
       </div>
     </main>
   );
