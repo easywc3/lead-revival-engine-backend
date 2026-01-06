@@ -2,31 +2,31 @@ FROM node:22-slim
 
 WORKDIR /app
 
-# System deps required by Prisma
+# Install Prisma system dependencies
 RUN apt-get update && apt-get install -y \
   openssl \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
+# Install Node.js dependencies
 COPY package*.json ./
 RUN npm install
 
-# Prisma schema first
+# Generate Prisma client
 COPY prisma ./prisma
 RUN npx prisma generate
 
-# Copy application source
+# Copy the rest of the application
 COPY . .
 
-# Build the Next.js application
+# Build Next.js
 RUN npm run build
 
-# Expose the SAME port Next.js listens on
+# Expose standard Next.js production port
 EXPOSE 3000
 
-# Ensure Prisma can see Railway DB variable
-ENV DATABASE_URL=${DATABASE_URL}
+# Default PORT so Next.js always has something
+ENV PORT=3000
 
-# Start Next.js in web mode
+# Use Dockerfile CMD (do NOT override in Railway UI)
 CMD ["sh", "-c", "next start -H 0.0.0.0 -p 3000"]
