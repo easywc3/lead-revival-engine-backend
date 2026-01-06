@@ -2,28 +2,26 @@ FROM node:22-slim
 
 WORKDIR /app
 
-# Install system dependencies required by Prisma
+# System deps required by Prisma engine
 RUN apt-get update && apt-get install -y \
   openssl \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# Install Node dependencies
+# Install deps
 COPY package*.json ./
 RUN npm install
 
-# Prisma client generation
+# Prisma schema
 COPY prisma ./prisma
 RUN npx prisma generate
 
-# Copy full application source
+# App source
 COPY . .
 
-# Build Next.js application
+# Build
 RUN npm run build
 
-# Expose does not control Railway – proxy does
-EXPOSE 3000
+EXPOSE 5000
 
-# Use shell to launch Next.js exactly on the injected PORT
-CMD ["sh", "-c", "npm run start"]
+CMD ["sh", "-c", "npx next start -H 0.0.0.0 -p 5000"]
