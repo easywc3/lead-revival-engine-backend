@@ -16,4 +16,5 @@ RUN npm run build
 
 EXPOSE 3000
 
-CMD ["sh","-c","next start -H 0.0.0.0 -p $PORT"]
+# IMPORTANT: Start ONLY Next.js API worker
+CMD ["npm", "run", "start"]

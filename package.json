@@ -2,12 +2,13 @@
   "name": "lead-revival-engine",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start -H 0.0.0.0 -p 3000",
-    "lint": "eslint"
-  },
+"scripts": {
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start -H 0.0.0.0 -p $PORT",
+  "lint": "eslint"
+}
+,
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "csv-parse": "^6.1.0",
