@@ -2,30 +2,28 @@ FROM node:22-slim
 
 WORKDIR /app
 
-# Install Prisma system dependencies
+# Prisma engine system dependencies
 RUN apt-get update && apt-get install -y \
   openssl \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js dependencies
+# Install Node dependencies
 COPY package*.json ./
 RUN npm install
-
-# Pass Railway-provided database connection into container
-ENV DATABASE_URL=${DATABASE_URL}
 
 # Generate Prisma client
 COPY prisma ./prisma
 RUN npx prisma generate
 
-# Copy the rest of the application
+# Copy application source
 COPY . .
 
 # Build Next.js
 RUN npm run build
 
-# Expose standard Next.js production port
+# Expose standard HTTP port
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+# Use Railway-provided DATABASE_URL variable at runtime
+CMD ["sh", "-c", "next start -H 0.0.0.0 -p $PORT"]
