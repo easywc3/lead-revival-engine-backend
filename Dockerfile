@@ -22,7 +22,11 @@ COPY . .
 # Build Next.js
 RUN npm run build
 
-# Expose standard HTTP port
+# Expose standard Next.js production port
 EXPOSE 3000
 
+# Default PORT so Next.js always has something
+ENV PORT=3000
+
+# FINAL: Start Next.js using PORT variable injected by Railway
 CMD ["sh", "-c", "next start -H 0.0.0.0 -p $PORT"]
