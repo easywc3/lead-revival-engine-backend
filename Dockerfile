@@ -19,8 +19,8 @@ COPY . .
 # Build Next.js
 RUN npm run build
 
-# Expose port dynamically
+# Expose deterministic port
 EXPOSE 3000
 
-# Do not hardcode PORT
-CMD ["sh", "-c", "next start -H 0.0.0.0 -p $PORT"]
+# Start the app on the same port Railway expects
+CMD ["next", "start", "-H", "0.0.0.0", "-p", "3000"]

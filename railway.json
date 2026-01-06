@@ -6,6 +6,6 @@
   },
 
   "deploy": {
-    "startCommand": "next start -H 0.0.0.0 -p 3000"
+    "startCommand": "npm run start"
   }
 }
