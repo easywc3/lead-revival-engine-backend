@@ -12,16 +12,21 @@ RUN apt-get update && apt-get install -y \
 COPY package*.json ./
 RUN npm install
 
-# Prisma schema
+# Prisma schema first
 COPY prisma ./prisma
 RUN npx prisma generate
 
 # App source
 COPY . .
 
-# Build
+# Build Next.js app
 RUN npm run build
 
+# Align to Railway expected public port
 EXPOSE 5000
 
-CMD ["sh", "-c", "npx next start -H 0.0.0.0 -p 5000"]
+# Make sure PORT exists for Next.js at runtime
+ENV PORT=5000
+
+# Persistent Railway-compatible runtime start
+CMD ["sh", "-c", "npm run start"]
