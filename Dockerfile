@@ -1,27 +1,32 @@
 FROM node:22-slim
 
-# Always run app from consistent directory
 WORKDIR /app
 
+# System deps required by Prisma
 RUN apt-get update && apt-get install -y \
   openssl \
   ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
+# Install dependencies
 COPY package*.json ./
 RUN npm install
 
+# Prisma schema first
 COPY prisma ./prisma
 RUN npx prisma generate
 
+# Copy application source
 COPY . .
 
+# Build the Next.js application
 RUN npm run build
 
-# Align to the port Railway expects to hit
+# Expose the SAME port Next.js listens on
 EXPOSE 3000
 
-# Let Railway inject PORT; don’t rely on shell vars
-ENV PORT=3000
+# Ensure Prisma can see Railway DB variable
+ENV DATABASE_URL=${DATABASE_URL}
 
+# Start Next.js in web mode
 CMD ["sh", "-c", "next start -H 0.0.0.0 -p 3000"]

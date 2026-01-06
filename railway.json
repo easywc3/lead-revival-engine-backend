@@ -4,6 +4,9 @@
     "builder": "DOCKERFILE"
   },
   "deploy": {
-    "restartPolicyType": "ALWAYS"
+    "numReplicas": 1,
+    "startCommand": "npm start",
+    "healthcheckPath": "/api/env-test",
+    "healthcheckTimeout": 300
   }
 }
