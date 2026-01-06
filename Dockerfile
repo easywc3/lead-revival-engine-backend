@@ -19,9 +19,8 @@ COPY . .
 # Build Next.js
 RUN npm run build
 
-# Expose AND run on the SAME port
-EXPOSE 8080
+# Expose port dynamically
+EXPOSE 3000
 
-ENV PORT=8080
-
-CMD ["npm", "start"]
+# Do not hardcode PORT
+CMD ["sh", "-c", "next start -H 0.0.0.0 -p $PORT"]
