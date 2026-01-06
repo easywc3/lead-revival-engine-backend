@@ -21,4 +21,5 @@ RUN npm run build
 
 EXPOSE 3000
 
-CMD ["next", "start", "-H", "0.0.0.0", "-p", "3000"]
+# Load environment variables at runtime and start Next on that same port
+CMD ["sh", "-c", "node -r dotenv/config ./node_modules/.bin/next start -H 0.0.0.0 -p $PORT"]
