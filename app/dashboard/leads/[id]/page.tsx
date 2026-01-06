@@ -1,170 +1,151 @@
-async function getLead(id: string) {
-  const res = await fetch(`http://localhost:3000/api/internal/leads/${id}`, {
-    cache: "no-store",
+// app/dashboard/leads/[id]/page.tsx
+import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+
+export default async function LeadDetailPage({
+  params
+}: {
+  params: Promise<{ id: string }>
+}) {
+
+  const { id } = await params;
+
+  // Direct Prisma query
+  const lead = await prisma.lead.findUnique({
+    where: {
+      id: Number(id)
+    },
+    include: {
+      inboundMessages: {
+        orderBy: { id: "asc" }
+      },
+      outboundMessages: {
+        orderBy: { id: "asc" }
+      }
+    }
   });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch lead");
+  if (!lead) {
+    return (
+      <main style={{ padding: 24 }}>
+        <p>Lead not found.</p>
+        <Link href="/dashboard/leads">Back</Link>
+      </main>
+    );
   }
 
-  return res.json();
-}
+  function chip(text: string) {
 
-function chip(text: string) {
-  return (
-    <span
-      style={{
+    return (
+      <span style={{
         display: "inline-block",
         padding: "2px 8px",
         borderRadius: 999,
         fontSize: 12,
         fontWeight: 700,
         border: "1px solid rgba(0,0,0,0.10)",
-        background: "rgba(0,0,0,0.04)",
-      }}
-    >
-      {text}
-    </span>
-  );
-}
+        background: "rgba(0,0,0,0.04)"
+      }}>
+        {text}
+      </span>
+    );
+  }
 
-function formatDate(ts: string | Date) {
-  const d = typeof ts === "string" ? new Date(ts) : ts;
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString();
-}
+  function formatDate(ts: string | Date) {
 
-export default async function LeadDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params; // ✅ REQUIRED IN NEXT 16
-  const lead = await getLead(id);
+    const d = typeof ts === "string"
+      ? new Date(ts)
+      : ts;
 
-  const name = lead.firstName ?? "Unknown";
+    if (Number.isNaN(d.getTime())) return "";
 
-  const inbound = (lead.inboundMessages ?? []).map((m: any) => ({
-    id: `in_${m.id}`,
-    dir: "in" as const,
-    body: m.body,
-    metaLeft: m.intent ? `[${m.intent}]` : "[INBOUND]",
-    at: m.createdAt,
-  }));
+    return d.toLocaleString();
+  }
 
-  const outbound = (lead.outboundMessages ?? []).map((m: any) => ({
-    id: `out_${m.id}`,
-    dir: "out" as const,
-    body: m.body,
-    metaLeft: m.reason ? `[${m.reason}]` : "[OUTBOUND]",
-    at: m.sentAt ?? m.createdAt,
-  }));
+  const inbound = (lead.inboundMessages ?? [])
+    .map((m: any) => ({
+      id: `in_${m.id}`,
+      dir: "in",
+      body: m.body,
+      intent: m.intent,
+      at: m.createdAt
+    }));
 
-  const timeline = [...inbound, ...outbound].sort((a, b) => {
-    const ta = new Date(a.at).getTime();
-    const tb = new Date(b.at).getTime();
-    return ta - tb;
-  });
+  const outbound = (lead.outboundMessages ?? [])
+    .map((m: any) => ({
+      id: `out_${m.id}`,
+      dir: "out",
+      body: m.body,
+      reason: m.reason,
+      at: m.sentAt ?? m.createdAt
+    }));
+
+  const timeline = [...inbound, ...outbound]
+    .sort((a, b) => {
+      return new Date(a.at).getTime() -
+             new Date(b.at).getTime();
+    });
 
   return (
-    <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28 }}>
-            Lead <span style={{ color: "rgba(0,0,0,0.55)" }}>#{lead.id}</span>
-          </h1>
-          <p style={{ margin: "6px 0 0", color: "rgba(0,0,0,0.65)" }}>
-            Full conversation timeline for this lead.
-          </p>
-        </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {chip(lead.state)}
-        </div>
-      </div>
+    <main className="min-h-screen bg-white text-black">
 
-      <div
-        style={{
-          marginTop: 16,
-          border: "1px solid rgba(0,0,0,0.10)",
-          borderRadius: 12,
-          background: "white",
-          boxShadow: "0 1px 10px rgba(0,0,0,0.04)",
-          padding: 16,
-        }}
-      >
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-          <div>
-            <div style={label}>Name</div>
-            <div style={value}>{name}</div>
-          </div>
-          <div>
-            <div style={label}>Phone</div>
-            <div style={{ ...value, fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}>
-              {lead.phone}
-            </div>
-          </div>
-          <div>
-            <div style={label}>Source</div>
-            <div style={value}>{lead.source ?? "-"}</div>
-          </div>
+      <div className="mx-auto max-w-4xl px-6 py-12">
+
+        <h1>
+          Lead Detail #{lead.id}
+        </h1>
+
+        <div className="mt-6 rounded-lg border p-4">
+
+          <p>Name: <strong>{lead.firstName ?? "Unknown"}</strong></p>
+          <p>Phone: <strong>{lead.phone}</strong></p>
+          <p>State: {chip(lead.state)}</p>
+
         </div>
-      </div>
 
-      <h2 style={{ marginTop: 18, marginBottom: 10 }}>Timeline</h2>
+        <h2 className="mt-8 mb-4">
+          Message Timeline
+        </h2>
 
-      <div
-        style={{
-          border: "1px solid rgba(0,0,0,0.10)",
-          borderRadius: 12,
-          overflow: "hidden",
-          background: "white",
-          boxShadow: "0 1px 10px rgba(0,0,0,0.04)",
-        }}
-      >
         {timeline.length === 0 ? (
-          <div style={{ padding: 16, color: "rgba(0,0,0,0.65)" }}>No messages yet.</div>
+          <p>No messages yet.</p>
         ) : (
           timeline.map((m: any) => {
+
             const isInbound = m.dir === "in";
+
             return (
-              <div
-                key={m.id}
+              <div key={m.id}
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "180px 1fr",
-                  gap: 12,
-                  padding: 14,
-                  borderTop: "1px solid rgba(0,0,0,0.06)",
-                  background: isInbound ? "rgba(59,130,246,0.03)" : "rgba(16,185,129,0.03)",
+                  marginTop: 10,
+                  padding: 10,
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  background: isInbound
+                    ? "rgba(59,130,246,0.03)"
+                    : "rgba(16,185,129,0.03)"
                 }}
               >
-                <div style={{ color: "rgba(0,0,0,0.65)", fontSize: 12 }}>
-                  <div style={{ fontWeight: 800, color: "rgba(0,0,0,0.70)" }}>
-                    {isInbound ? "Inbound" : "Outbound"} {m.metaLeft ? <span style={{ fontWeight: 700 }}> {m.metaLeft}</span> : null}
-                  </div>
-                  <div style={{ marginTop: 4 }}>{formatDate(m.at)}</div>
+
+                <div style={{ fontSize: 12 }}>
+                  {isInbound ? "Inbound" : "Outbound"}
+                  {m.intent ?? m.reason}
                 </div>
 
-                <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.45 }}>
+                <div style={{ fontSize: 12 }}>
+                  {formatDate(m.at)}
+                </div>
+
+                <div style={{ whiteSpace: "pre-wrap" }}>
                   {m.body}
                 </div>
+
               </div>
             );
           })
         )}
+
       </div>
-    </div>
+
+    </main>
   );
 }
-
-const label: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 700,
-  color: "rgba(0,0,0,0.55)",
-};
-
-const value: React.CSSProperties = {
-  marginTop: 4,
-  fontSize: 14,
-  fontWeight: 700,
-};

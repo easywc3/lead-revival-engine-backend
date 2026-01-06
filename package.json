@@ -2,13 +2,12 @@
   "name": "lead-revival-engine",
   "version": "0.1.0",
   "private": true,
-"scripts": {
-  "dev": "next dev",
-  "build": "next build",
-  "start": "next start -H 0.0.0.0 -p $PORT",
-  "lint": "eslint"
-}
-,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p $PORT",
+    "lint": "eslint"
+  },
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "csv-parse": "^6.1.0",
@@ -17,19 +16,19 @@
     "nodemailer": "^7.0.11",
     "openai": "^6.14.0",
     "prisma": "^5.22.0",
-"react": "18.2.0",
-"react-dom": "18.2.0"
+    "react": "19.2.1",
+    "react-dom": "19.2.1",
     "twilio": "^5.11.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.0.0",
-    "@types/node": "^20.0.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
     "@types/nodemailer": "^7.0.4",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "eslint": "^9.0.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
     "eslint-config-next": "16.0.10",
-    "tailwindcss": "^4.0.0",
-    "typescript": "^5.0.0"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
