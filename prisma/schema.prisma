@@ -41,14 +41,13 @@ model Lead {
   lastErrorCode      String?
   lastErrorAt        DateTime?
   lastAttemptAt      DateTime?
-  sendLockAt         DateTime?         // 🔒 NEW — outbound send lock
+  sendLockAt         DateTime?
 
   inboundMessages    InboundMessage[]
   outboundMessages   OutboundMessage[]
 
   createdAt          DateTime         @default(now())
 }
-
 
 model InboundMessage {
   id         Int            @id @default(autoincrement())
@@ -67,7 +66,7 @@ model InboundMessage {
 model OutboundMessage {
   id        Int      @id @default(autoincrement())
   leadId    Int
-  lead      Lead     @relation(fields: [leadId], references: [id])
+  lead      Lead     @relation(fields: [leadId], references [id])
 
   body      String
   reason    String
