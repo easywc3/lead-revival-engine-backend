@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/services/phone";
 
@@ -10,23 +10,45 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const body = await req.json();
+  try {
+    // IMPORTANT: Read body ONCE as text, then parse.
+    const raw = await req.text();
+    let body: any;
 
-  if (!body.firstName || !body.phone) {
+    try {
+      body = JSON.parse(raw);
+    } catch (e: any) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Invalid JSON body",
+          rawStartsWith: raw.slice(0, 120),
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!body?.firstName || !body?.phone) {
+      return NextResponse.json(
+        { ok: false, error: "firstName and phone required" },
+        { status: 400 }
+      );
+    }
+
+    const phone = normalizePhone(body.phone);
+
+    const lead = await prisma.lead.create({
+      data: {
+        firstName: String(body.firstName),
+        phone,
+      },
+    });
+
+    return NextResponse.json({ ok: true, lead });
+  } catch (e: any) {
     return NextResponse.json(
-      { error: "firstName and phone required" },
-      { status: 400 }
+      { ok: false, error: e?.message ?? String(e) },
+      { status: 500 }
     );
   }
-
-  const phone = normalizePhone(body.phone);
-
-  const lead = await prisma.lead.create({
-    data: {
-      firstName: body.firstName,
-      phone,
-    },
-  });
-
-  return NextResponse.json(lead);
 }
