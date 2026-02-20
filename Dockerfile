@@ -17,3 +17,9 @@ RUN npm run build
 EXPOSE 8080
 
 CMD ["sh", "-c", "npx next start -H 0.0.0.0 -p $PORT"]
+
+# Run migrations on container start
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+
