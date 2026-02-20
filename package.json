@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "lint": "eslint",
-    "start": "npx next start -H 0.0.0.0 -p $PORT"
+    "start": "npx next start -H 0.0.0.0 -p $PORT",
+    "migrate": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
