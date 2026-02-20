@@ -1,4 +1,4 @@
-FROM node:22-slim
+﻿FROM node:22-slim
 
 WORKDIR /app
 
@@ -16,10 +16,6 @@ RUN npm run build
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "npx next start -H 0.0.0.0 -p $PORT"]
-
-# Run migrations on container start
-COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+# Run migrations + start app
 RUN chmod +x /app/docker-entrypoint.sh
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
-
+CMD ["/app/docker-entrypoint.sh"]
