@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "https://railway.app/railway.schema.json",
 
   "build": {
@@ -6,6 +6,6 @@
   },
 
   "deploy": {
-    "startCommand": "npm start"
+    "startCommand": "/app/docker-entrypoint.sh"
   }
 }
